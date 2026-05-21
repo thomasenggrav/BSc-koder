@@ -434,6 +434,7 @@ void HAL_RTC_MspInit(RTC_HandleTypeDef* hrtc)
     HAL_NVIC_SetPriority(RTC_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(RTC_IRQn);
     /* USER CODE BEGIN RTC_MspInit 1 */
+    HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN7_HIGH_3);
 
     /* USER CODE END RTC_MspInit 1 */
 
@@ -462,7 +463,7 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* hrtc)
     /* RTC interrupt DeInit */
     HAL_NVIC_DisableIRQ(RTC_IRQn);
     /* USER CODE BEGIN RTC_MspDeInit 1 */
-
+    HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN7_HIGH_3);
     /* USER CODE END RTC_MspDeInit 1 */
   }
 
