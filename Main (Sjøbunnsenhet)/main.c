@@ -55,11 +55,11 @@ UCHAR    media_cache[4096];
 
 // Modem timing / line
 #define MODEM_WORD_INTERVAL_MS    1650u             // Time between words when sending to modem, 1.65 seconds
-#define MODEM_Q_MAX               26u               // Max number of frames in modem queue
+#define MODEM_Q_MAX               32u               // Max number of frames in modem queue
 
 // App timeouts
 #define SENSOR_ACQUIRE_TIMEOUT_MS  15000u           // 15 seconds to acquire sensor data
-#define MODEM_REPLY_WINDOW_MS     12000u            // 12 seconds to wait for a reply
+#define MODEM_REPLY_WINDOW_MS     12000u            // 15 seconds to wait for a reply
 #define MODEM_SEND_TIMEOUT_MS     60000u            // 60 seconds to send everything in modem queue
 
 // Seabird polling
@@ -84,7 +84,7 @@ UCHAR    media_cache[4096];
 // ------------------------------------------------------------
 // 1 = Seabird and Signature500 use the same UART for simulation test
 // 0 = normal setup: Seabird on USART1, Signature500 on USART2
-#define SENSOR_SINGLE_UART_TEST  0u
+#define SENSOR_SINGLE_UART_TEST  1u
 
 #if SENSOR_SINGLE_UART_TEST
   #define SEABIRD_UART_HANDLE      (&huart2)
@@ -104,9 +104,13 @@ UCHAR    media_cache[4096];
 // PFF Command Message IDs
 #define PFF_MSGID_CMD_SHELL         0x20u
 #define PFF_MSGID_CMD_EXTENDED      0x21u
+#define PFF_MSGID_CMD_ACK           0x22u
+#define PFF_MSGID_CMD_NACK          0x23u
 
 // Shell command IDs
 #define CMD_SET_SLEEP_INTERVAL_S    0x01u
+#define CMD_PING                    0x02u
+#define CMD_GET_STATUS              0x03u
 
 //  Reply RX
 #define MODEM_REPLY_FRAME_BYTES     PFF_TOTAL_BYTES          // Expecting a full PFF frame as reply, so 10 bytes
@@ -900,6 +904,18 @@ static void app_step(void)
             break;
           }
 
+          case PFF_MSGID_CMD_ACK:
+          {
+            // ACK received. No action needed in current implementation.
+            break;
+          }
+
+          case PFF_MSGID_CMD_NACK:
+          {
+            // NACK received. No action needed in current implementation.
+            break;
+          }
+
           default:
           {
             // Unknown message ID. Ignore and continue.
@@ -1602,7 +1618,19 @@ static bool handle_shell_command(const uint8_t data5[PFF_DATA_BYTES])
       sleep_interval_s = (uint32_t)new_sleep;
       return true;
     }
-	  
+
+    case CMD_PING:
+    {
+      // Command recognized. No further action in current implementation.
+      return true;
+    }
+
+    case CMD_GET_STATUS:
+    {
+      // Command recognized. Status response is not implemented in current version.
+      return true;
+    }
+
     default:
     {
       return false;
@@ -2120,7 +2148,7 @@ static uint32_t pff_read_bits(const uint8_t *src, uint16_t *bitpos, uint8_t nbit
   {
     // Calculate byte index and bit index within the byte
     uint16_t pos = *bitpos;
-    // For MSB-first, byte index is pos / 8
+    // For MSB-first, bit index in byte is 7 - (pos % 8)
     uint16_t byte_index = pos / 8;
     // For MSB-first, bit index in byte is 7 - (pos % 8)
     uint8_t  bit_in_byte = 7 - (pos % 8);
@@ -2671,7 +2699,7 @@ static float TMP35_AdcToVoltage(uint32_t adc_raw)
     return ((float)adc_raw * ADC_VREF) / ADC_MAX_VALUE;
 }
 
-// Converts voltage to temperature in °C, using the TMP35 characteristics.
+// Converts voltage to temperature in °C, using the TMP35 characteristics (10 mV/°C and 500 mV offset at 0°C).
 static float TMP35_VoltageToCelsius(float voltage)
 {
     return voltage / TMP35_SCALE_VOLT_PER_C;
